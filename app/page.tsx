@@ -30,9 +30,7 @@ export default function Home() {
         body: JSON.stringify({ text: doc.text, aiConfig }),
       });
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.error || "Processing failed");
-
       setProcessedDocument(data);
       setAppState("reading");
     } catch (e) {
@@ -49,12 +47,7 @@ export default function Home() {
   }
 
   if (appState === "processing" && rawDocument) {
-    return (
-      <ProcessingView
-        title={rawDocument.title}
-        wordCount={rawDocument.wordCount}
-      />
-    );
+    return <ProcessingView title={rawDocument.title} wordCount={rawDocument.wordCount} />;
   }
 
   if (appState === "reading" && rawDocument && processedDocument) {
@@ -69,16 +62,16 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white dark:bg-slate-900">
       {error && (
-        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-red-50 border border-red-200 text-red-700 px-4 py-2 rounded-lg text-sm shadow">
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-2 rounded-lg text-sm shadow">
           {error}
         </div>
       )}
-      <div className="absolute top-4 right-4">
+      <div className="absolute top-4 right-14">
         <button
           onClick={() => setSettingsOpen(true)}
-          className="text-xs text-slate-500 hover:text-slate-900 underline"
+          className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 underline"
         >
           AI Settings
         </button>
