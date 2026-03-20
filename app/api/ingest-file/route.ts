@@ -72,7 +72,8 @@ async function extractDocx(buffer: Buffer): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const mammoth = require("mammoth");
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const TurndownService = require("turndown");
+  const TurndownModule = require("turndown");
+  const TurndownService = TurndownModule.default ?? TurndownModule;
   const result = await mammoth.convertToHtml({ buffer });
   const html: string = result.value ?? "";
   const td = new TurndownService({
