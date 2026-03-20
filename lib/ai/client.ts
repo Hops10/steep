@@ -1,3 +1,4 @@
+// SERVER-SIDE ONLY — do not import in client components
 import type { AIConfig } from './types'
 
 export async function callAI(

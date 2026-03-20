@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { PROVIDERS, getDefaultModel } from '@/lib/ai/providers'
 import { loadAIConfig, saveAIConfig } from '@/lib/ai/config'
-import { callAI } from '@/lib/ai/client'
+
 import type { AIConfig, AIProvider } from '@/lib/ai/types'
 import { Button } from '@/components/ui/button'
 
@@ -54,9 +54,19 @@ export function SettingsModal({ open, onClose }: Props) {
     setTestMessage('')
     try {
       const finalConfig = { ...config, model: customModel.trim() || config.model }
-      await callAI(finalConfig, 'You are a test assistant.', 'Reply with only "OK".')
-      setTestStatus('ok')
-      setTestMessage('Connection successful!')
+      const res = await fetch('/api/test-connection', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ aiConfig: finalConfig }),
+      })
+      const data = await res.json()
+      if (data.success) {
+        setTestStatus('ok')
+        setTestMessage('Connection successful!')
+      } else {
+        setTestStatus('error')
+        setTestMessage(data.error ?? 'Connection failed')
+      }
     } catch (e) {
       setTestStatus('error')
       setTestMessage(e instanceof Error ? e.message : 'Connection failed')
