@@ -192,7 +192,7 @@ export function ReadingPacer({ text }: Props) {
           }
           return (
             <div key={bi} onClick={() => range.start >= 0 && clickPhrase(range.start)}
-              className="mb-4 prose prose-sm max-w-none cursor-pointer [&_*]:!text-slate-900 dark:[&_*]:!text-white">
+              className="mb-4 prose prose-sm max-w-none cursor-pointer reading-text">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{block}</ReactMarkdown>
             </div>
           );

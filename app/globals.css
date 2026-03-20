@@ -48,3 +48,23 @@ body {
   margin: 0.5em 0;
   content: "";
 }
+
+/* Reading text — force full contrast in dark mode.
+   Targets both normal reading (ChunkReader) and pacer blocks.
+   Must use !important to beat @tailwindcss/typography prose specificity. */
+.dark .reading-text,
+.dark .reading-text *,
+.dark .reading-text p,
+.dark .reading-text h1,
+.dark .reading-text h2,
+.dark .reading-text h3,
+.dark .reading-text h4,
+.dark .reading-text h5,
+.dark .reading-text h6,
+.dark .reading-text li,
+.dark .reading-text strong,
+.dark .reading-text em,
+.dark .reading-text span,
+.dark .reading-text a {
+  color: #ffffff !important;
+}
