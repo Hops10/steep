@@ -11,14 +11,14 @@ interface Props {
 }
 
 const STATUS_STYLES: Record<ChunkStatus, string> = {
-  unread: "bg-slate-200 text-slate-500",
-  heard: "bg-blue-100 text-blue-700",   // Sprint 2: passive/TTS mode
-  read: "bg-green-100 text-green-700",
+  unread: "bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400",
+  heard: "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400",
+  read: "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400",
 };
 
 const STATUS_LABELS: Record<ChunkStatus, string> = {
   unread: "Unread",
-  heard: "Heard",   // Sprint 2 only
+  heard: "Heard",
   read: "Read",
 };
 
@@ -32,15 +32,15 @@ export function DocumentSidebar({
   const total = chunkStatuses.length;
 
   return (
-    <div className="w-64 h-full bg-slate-50 border-r border-slate-200 flex flex-col">
-      <div className="p-4 border-b border-slate-200">
-        <h2 className="font-semibold text-slate-900 text-sm truncate">
+    <div className="w-64 h-full bg-slate-50 dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col">
+      <div className="p-4 border-b border-slate-200 dark:border-slate-700">
+        <h2 className="font-semibold text-slate-900 dark:text-slate-100 text-sm truncate">
           {document.title}
         </h2>
-        <p className="text-xs text-slate-500 mt-1">
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
           {readCount} / {total} sections read
         </p>
-        <div className="mt-2 h-1.5 bg-slate-200 rounded-full overflow-hidden">
+        <div className="mt-2 h-1.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
           <div
             className="h-full bg-green-500 rounded-full transition-all"
             style={{ width: `${(readCount / total) * 100}%` }}
@@ -59,13 +59,17 @@ export function DocumentSidebar({
               onClick={() => onChunkSelect(index)}
               className={`w-full text-left p-3 rounded-md mb-1 transition-colors ${
                 isActive
-                  ? "bg-slate-900 text-white"
-                  : "hover:bg-slate-100 text-slate-700"
+                  ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900"
+                  : "hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300"
               }`}
             >
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
-                  <p className={`text-xs font-medium mb-1 ${isActive ? "text-slate-300" : "text-slate-400"}`}>
+                  <p className={`text-xs font-medium mb-1 ${
+                    isActive
+                      ? "text-slate-300 dark:text-slate-600"
+                      : "text-slate-400 dark:text-slate-500"
+                  }`}>
                     Section {index + 1}
                   </p>
                   <p className="text-xs leading-snug line-clamp-2">{chunk.summary}</p>

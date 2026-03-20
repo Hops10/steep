@@ -84,8 +84,8 @@ export function DocumentIngestion({ onDocumentReady }: Props) {
   return (
     <div className="max-w-2xl mx-auto p-8">
       <div className="mb-8">
-        <h1 className="text-2xl font-semibold text-slate-900 mb-1">Steep</h1>
-        <p className="text-slate-500 text-sm">Active reading for professionals</p>
+        <h1 className="text-2xl font-semibold text-slate-900 dark:text-slate-100 mb-1">Steep</h1>
+        <p className="text-slate-500 dark:text-slate-400 text-sm">Active reading for professionals</p>
       </div>
 
       <div className="flex gap-2 mb-6">
@@ -95,8 +95,8 @@ export function DocumentIngestion({ onDocumentReady }: Props) {
             onClick={() => setMode(m)}
             className={`px-4 py-1.5 rounded-full text-sm font-medium transition-colors ${
               mode === m
-                ? "bg-slate-900 text-white"
-                : "text-slate-600 hover:text-slate-900 border border-slate-200"
+                ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900"
+                : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-slate-100 border border-slate-200 dark:border-slate-600"
             }`}
           >
             {m === "paste" ? "Paste text" : m === "url" ? "URL" : "Upload file"}
@@ -125,7 +125,7 @@ export function DocumentIngestion({ onDocumentReady }: Props) {
             value={urlInput}
             onChange={(e) => setUrlInput(e.target.value)}
             placeholder="https://example.com/article"
-            className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-400"
+            className="w-full rounded-md border border-slate-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-slate-400"
             onKeyDown={(e) => e.key === "Enter" && handleUrl()}
           />
           <Button onClick={handleUrl} disabled={loading || !urlInput.trim()}>
@@ -137,23 +137,19 @@ export function DocumentIngestion({ onDocumentReady }: Props) {
       {mode === "file" && (
         <div className="space-y-3">
           <div
-            className="border-2 border-dashed border-slate-200 rounded-lg p-12 text-center cursor-pointer hover:border-slate-400 transition-colors"
+            className="border-2 border-dashed border-slate-200 dark:border-slate-600 rounded-lg p-12 text-center cursor-pointer hover:border-slate-400 dark:hover:border-slate-400 transition-colors"
             onClick={() => fileRef.current?.click()}
           >
-            <p className="text-slate-500 text-sm">Click to upload PDF or Word (.docx)</p>
-            <input
-              ref={fileRef}
-              type="file"
-              accept=".pdf,.docx"
-              onChange={handleFile}
-              className="hidden"
-            />
+            <p className="text-slate-500 dark:text-slate-400 text-sm">
+              Click to upload PDF or Word (.docx)
+            </p>
+            <input ref={fileRef} type="file" accept=".pdf,.docx" onChange={handleFile} className="hidden" />
           </div>
         </div>
       )}
 
       {error && (
-        <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm">
+        <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md text-red-700 dark:text-red-400 text-sm">
           {error}
         </div>
       )}

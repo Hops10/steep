@@ -21,7 +21,6 @@ export function ReaderView({ rawDocument, processedDocument, onNewDocument, onOp
     processedDocument.chunks.map(() => "unread")
   );
 
-  // Load persisted progress
   useEffect(() => {
     const chunkIds = processedDocument.chunks.map((c) => c.id);
     const progress = initDocumentProgress(documentId, processedDocument.title, chunkIds);
@@ -36,7 +35,6 @@ export function ReaderView({ rawDocument, processedDocument, onNewDocument, onOp
         next[index] = "read";
         return next;
       });
-
       const progress = getProgress(documentId);
       if (progress) {
         const chunk = progress.chunks[index];
@@ -56,20 +54,20 @@ export function ReaderView({ rawDocument, processedDocument, onNewDocument, onOp
 
   return (
     <div className="h-screen flex flex-col">
-      <header className="h-12 flex items-center justify-between px-6 border-b border-slate-200 bg-white shrink-0">
-        <span className="font-semibold text-slate-900 text-sm">Steep</span>
-        <div className="flex gap-3 items-center">
+      <header className="h-12 flex items-center justify-between px-6 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shrink-0">
+        <span className="font-semibold text-slate-900 dark:text-slate-100 text-sm">Steep</span>
+        <div className="flex gap-3 items-center pr-9">
           {onOpenSettings && (
             <button
               onClick={onOpenSettings}
-              className="text-xs text-slate-500 hover:text-slate-900 underline"
+              className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 underline"
             >
               AI Settings
             </button>
           )}
           <button
             onClick={onNewDocument}
-            className="text-xs text-slate-500 hover:text-slate-900 underline"
+            className="text-xs text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-100 underline"
           >
             Load new document
           </button>
@@ -83,8 +81,7 @@ export function ReaderView({ rawDocument, processedDocument, onNewDocument, onOp
           activeChunkIndex={activeChunkIndex}
           onChunkSelect={setActiveChunkIndex}
         />
-
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-y-auto bg-white dark:bg-slate-900">
           <div className="max-w-2xl mx-auto py-10 px-8">
             {activeChunk && (
               <ChunkReader
@@ -102,7 +99,6 @@ export function ReaderView({ rawDocument, processedDocument, onNewDocument, onOp
   );
 }
 
-// Stable document ID derived from content fingerprint
 function useDocumentId(raw: RawDocument): string {
   const [id] = useState(() => {
     const key = `steep:docid:${raw.text.substring(0, 200)}`;
