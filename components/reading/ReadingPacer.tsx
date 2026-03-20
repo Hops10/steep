@@ -77,7 +77,36 @@ export function ReadingPacer({ text }: Props) {
   useEffect(() => { stateRef.current = state; }, [state]);
   useEffect(() => { indexRef.current = index; }, [index]);
   useEffect(() => { wpmRef.current = wpm; localStorage.setItem(WPM_KEY, String(wpm)); }, [wpm]);
-  useEffect(() => { phraseRefs.current[index]?.scrollIntoView({ behavior: "smooth", block: "center" }); }, [index]);
+  // Scroll only when phrase nears the bottom edge of the viewport.
+  // When a scroll fires, pause the timer and add an eye-settle delay before resuming.
+  const EYE_SETTLE_MS = 400;
+  const SCROLL_THRESHOLD = 0.72; // scroll when phrase bottom exceeds 72% of viewport height
+
+  useEffect(() => {
+    const el = phraseRefs.current[index];
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const viewportH = window.innerHeight;
+    if (rect.bottom < viewportH * SCROLL_THRESHOLD) return; // still comfortably in view — don't scroll
+
+    // Scroll phrase to upper-third of viewport so reader has runway ahead
+    const targetTop = el.getBoundingClientRect().top + window.scrollY - viewportH * 0.28;
+    window.scrollTo({ top: targetTop, behavior: "smooth" });
+
+    // If pacer is running, suspend timer and restart after scroll + eye settle
+    if (stateRef.current === "running" && timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = setTimeout(() => {
+        if (stateRef.current === "running") {
+          timerRef.current = setTimeout(
+            () => stepRef.current(),
+            phraseMs(phrases[index]?.wordCount ?? 2, wpmRef.current)
+          );
+        }
+      }, EYE_SETTLE_MS);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [index]);
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   useEffect(() => {
