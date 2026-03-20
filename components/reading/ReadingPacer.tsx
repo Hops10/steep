@@ -181,9 +181,9 @@ export function ReadingPacer({ text }: Props) {
                   const gi = range.start + pi;
                   return (
                     <span key={gi} ref={el => { phraseRefs.current[gi] = el; }} onClick={() => clickPhrase(gi)}
-                      className={cn("cursor-pointer rounded px-0.5 transition-colors",
-                        gi === index ? "bg-amber-300 dark:bg-amber-400 text-slate-900 font-semibold"
-                          : gi < index ? "opacity-60 text-slate-500 dark:text-slate-500"
+                      className={cn("cursor-pointer rounded px-0.5",
+                        gi === index
+                          ? "border-b-2 border-amber-400 dark:border-amber-500 text-slate-900 dark:text-slate-100 font-medium"
                           : "text-slate-800 dark:text-slate-200")}>
                       {phrase.text}{" "}
                     </span>
@@ -194,8 +194,7 @@ export function ReadingPacer({ text }: Props) {
           }
           return (
             <div key={bi} onClick={() => range.start >= 0 && clickPhrase(range.start)}
-              className={cn("mb-4 prose dark:prose-invert max-w-none prose-sm cursor-pointer",
-                bi < currentBlock ? "opacity-50" : "")}>
+              className="mb-4 prose dark:prose-invert max-w-none prose-sm cursor-pointer">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{block}</ReactMarkdown>
             </div>
           );
