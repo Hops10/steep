@@ -171,7 +171,7 @@ export function ReadingPacer({ text }: Props) {
   return (
     <div className="space-y-4">
       <PacerToolbar state={state} wpm={wpm} onStart={start} onPause={pause} onResume={resume} onRestart={restart} onAdjust={adjustWpm} />
-      <div className="leading-relaxed text-sm">
+      <div className="leading-relaxed text-sm text-slate-900 dark:text-white">
         {blocks.map((block, bi) => {
           const range = blockRanges[bi];
           if (bi === currentBlock) {
@@ -182,9 +182,7 @@ export function ReadingPacer({ text }: Props) {
                   return (
                     <span key={gi} ref={el => { phraseRefs.current[gi] = el; }} onClick={() => clickPhrase(gi)}
                       className={cn("cursor-pointer rounded px-0.5",
-                        gi === index
-                          ? "border-b-2 border-amber-400 dark:border-amber-500 text-slate-900 dark:text-slate-100 font-medium"
-                          : "text-slate-800 dark:text-slate-200")}>
+                        gi === index && "border-b-2 border-amber-400 dark:border-amber-500")}>
                       {phrase.text}{" "}
                     </span>
                   );
@@ -194,7 +192,7 @@ export function ReadingPacer({ text }: Props) {
           }
           return (
             <div key={bi} onClick={() => range.start >= 0 && clickPhrase(range.start)}
-              className="mb-4 prose max-w-none prose-sm cursor-pointer text-slate-800 dark:text-slate-200 prose-headings:text-slate-800 dark:prose-headings:text-slate-200 prose-strong:text-slate-900 dark:prose-strong:text-slate-100 prose-li:text-slate-800 dark:prose-li:text-slate-200">
+              className="mb-4 prose prose-sm max-w-none cursor-pointer text-slate-900 dark:text-white prose-headings:text-slate-900 dark:prose-headings:text-white prose-p:text-slate-900 dark:prose-p:text-white prose-li:text-slate-900 dark:prose-li:text-white prose-strong:text-slate-900 dark:prose-strong:text-white">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{block}</ReactMarkdown>
             </div>
           );
