@@ -42,16 +42,43 @@ export async function POST(req: NextRequest) {
   }
 }
 
+/** Heuristic: reconstruct markdown structure from raw PDF text. */
+function reconstructMarkdown(rawText: string): string {
+  const lines = rawText.split("\n");
+  return lines
+    .map((line) => {
+      const t = line.trim();
+      if (!t) return "";
+      if (/^[•]\s/.test(t)) return `- ${t.slice(2)}`;
+      if (/^[-*]\s/.test(t) || /^\d+\.\s/.test(t)) return t;
+      if (t === t.toUpperCase() && t.length > 3 && t.length < 80 && /[A-Z]/.test(t)) {
+        return `## ${t}`;
+      }
+      if (t.length < 60 && t.endsWith(":")) return `### ${t}`;
+      return t;
+    })
+    .join("\n");
+}
+
 async function extractPdf(buffer: Buffer): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const pdfParse = require("pdf-parse");
   const data = await pdfParse(buffer);
-  return data.text ?? "";
+  const raw: string = data.text ?? "";
+  return reconstructMarkdown(raw);
 }
 
 async function extractDocx(buffer: Buffer): Promise<string> {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const mammoth = require("mammoth");
-  const result = await mammoth.extractRawText({ buffer });
-  return result.value ?? "";
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const TurndownService = require("turndown");
+  const result = await mammoth.convertToHtml({ buffer });
+  const html: string = result.value ?? "";
+  const td = new TurndownService({
+    headingStyle: "atx",
+    bulletListMarker: "-",
+    codeBlockStyle: "fenced",
+  });
+  return td.turndown(html);
 }

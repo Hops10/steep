@@ -1,7 +1,11 @@
-export const PROCESSING_SYSTEM = `You are a reading comprehension expert. Analyze documents and produce structured JSON.`
+export const PROCESSING_SYSTEM = `You are a reading comprehension expert. Analyze documents and produce structured JSON.
+Input documents may be formatted as markdown with headers, bullet points, bold/italic text, and numbered lists.
+Preserve all markdown structure in chunk text fields — keep headers (##), bullets (-), bold (**term**), etc.
+Never split a bullet list or cut mid-header when defining chunk boundaries.`
 
 export function buildProcessingPrompt(text: string): string {
   return `Analyze this document and produce a structured JSON response.
+The document may contain markdown formatting. Preserve it in chunk text and summaries.
 
 DOCUMENT:
 ${text.substring(0, 12000)}
@@ -12,8 +16,8 @@ Produce a JSON object with this exact structure:
   "chunks": [
     {
       "id": "chunk_1",
-      "text": "verbatim chunk text (400-600 words)",
-      "summary": "what this section establishes — 1-2 sentences",
+      "text": "verbatim markdown chunk text (400-600 words) — preserve headers, bullets, bold, etc.",
+      "summary": "what this section establishes — 1-2 sentences, **bold** key terms",
       "concepts": [
         {
           "term": "key concept",
@@ -32,7 +36,9 @@ Produce a JSON object with this exact structure:
 
 Rules:
 - Split into 3-6 chunks of 400-600 words each
-- Summary describes what the chunk ESTABLISHES, not what it concludes
+- Chunk boundaries must respect markdown structure — never cut mid-list or mid-header
+- Preserve all markdown formatting in the text field (headers, bullets, bold, italic)
+- Summary describes what the chunk ESTABLISHES, not what it concludes; use **bold** for key terms
 - adversarialQuestions challenge the DOCUMENT's claims, not comprehension
 - Each chunk has 1-3 concepts and 2-3 adversarialQuestions
 - Return ONLY valid JSON, no markdown code blocks`

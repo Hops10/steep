@@ -109,7 +109,7 @@ export function DocumentIngestion({ onDocumentReady }: Props) {
           <Textarea
             value={pasteText}
             onChange={(e) => setPasteText(e.target.value)}
-            placeholder="Paste your document text here..."
+            placeholder="Paste your document text here… Supports plain text or markdown (#, *, -, **bold**)."
             className="min-h-[300px] font-mono text-xs"
           />
           <Button onClick={handlePaste} disabled={!pasteText.trim()}>

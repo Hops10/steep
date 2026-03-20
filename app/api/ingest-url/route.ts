@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
     // Use Jina.ai reader for clean text extraction
     const jinaUrl = `https://r.jina.ai/${url}`;
     const response = await fetch(jinaUrl, {
-      headers: { Accept: "text/plain" },
+      headers: { Accept: "text/markdown" },
     });
 
     if (!response.ok) {
