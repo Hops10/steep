@@ -5,6 +5,7 @@ import type { Chunk, Concept, ReadingStep, RecallCheckResponse } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ConceptPanel } from "@/components/concepts/ConceptPanel";
+import { ReadingPacer } from "@/components/reading/ReadingPacer";
 import { highlightConcepts } from "@/lib/highlight";
 import { loadAIConfig } from "@/lib/ai/config";
 
@@ -23,7 +24,6 @@ export function ChunkReader({ chunk, allConcepts, onComplete, isLast }: Props) {
   const [loadingRecall, setLoadingRecall] = useState(false);
   const [activeConcept, setActiveConcept] = useState<Concept | null>(null);
 
-  // Reset state when chunk changes
   useEffect(() => {
     setStep("pre-field");
     setPreField("");
@@ -53,9 +53,7 @@ export function ChunkReader({ chunk, allConcepts, onComplete, isLast }: Props) {
   }
 
   function handleConceptClick(term: string) {
-    const concept = allConcepts.find(
-      (c) => c.term.toLowerCase() === term.toLowerCase()
-    );
+    const concept = allConcepts.find((c) => c.term.toLowerCase() === term.toLowerCase());
     if (concept) setActiveConcept(concept);
   }
 
@@ -68,25 +66,15 @@ export function ChunkReader({ chunk, allConcepts, onComplete, isLast }: Props) {
           onClose={() => setActiveConcept(null)}
         />
       )}
-
       <div className="max-w-2xl mx-auto space-y-6">
         <StepIndicator current={step} />
 
         {step === "pre-field" && (
-          <PreField
-            value={preField}
-            onChange={setPreField}
-            onNext={() => setStep("summary")}
-          />
+          <PreField value={preField} onChange={setPreField} onNext={() => setStep("summary")} />
         )}
-
         {step === "summary" && (
-          <SummaryView
-            summary={chunk.summary}
-            onNext={() => setStep("reading")}
-          />
+          <SummaryView summary={chunk.summary} onNext={() => setStep("reading")} />
         )}
-
         {step === "reading" && (
           <ReadingView
             text={chunk.text}
@@ -95,7 +83,6 @@ export function ChunkReader({ chunk, allConcepts, onComplete, isLast }: Props) {
             onNext={() => setStep("post-field")}
           />
         )}
-
         {step === "post-field" && (
           <PostField
             value={postField}
@@ -104,20 +91,11 @@ export function ChunkReader({ chunk, allConcepts, onComplete, isLast }: Props) {
             loading={loadingRecall}
           />
         )}
-
         {step === "correction" && recallFeedback && (
-          <CorrectionView
-            feedback={recallFeedback}
-            onNext={() => setStep("adversarial")}
-          />
+          <CorrectionView feedback={recallFeedback} onNext={() => setStep("adversarial")} />
         )}
-
         {step === "adversarial" && (
-          <AdversarialView
-            questions={chunk.adversarialQuestions}
-            onNext={onComplete}
-            isLast={isLast}
-          />
+          <AdversarialView questions={chunk.adversarialQuestions} onNext={onComplete} isLast={isLast} />
         )}
       </div>
     </div>
@@ -133,10 +111,15 @@ function StepIndicator({ current }: { current: ReadingStep }) {
       {steps.map((s, i) => (
         <React.Fragment key={s}>
           <div className={`text-xs px-2 py-0.5 rounded ${
-            i === idx ? "bg-slate-900 text-white" :
-            i < idx ? "bg-slate-200 text-slate-500" : "text-slate-300"
+            i === idx
+              ? "bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900"
+              : i < idx
+                ? "bg-slate-200 dark:bg-slate-700 text-slate-500 dark:text-slate-400"
+                : "text-slate-300 dark:text-slate-600"
           }`}>{labels[i]}</div>
-          {i < steps.length - 1 && <span className="text-slate-200">›</span>}
+          {i < steps.length - 1 && (
+            <span className="text-slate-200 dark:text-slate-700">›</span>
+          )}
         </React.Fragment>
       ))}
     </div>
@@ -149,10 +132,17 @@ function PreField({ value, onChange, onNext }: {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="font-medium text-slate-900 mb-1">Before you read</h3>
-        <p className="text-sm text-slate-500">What do you already know about this topic? What do you expect to find?</p>
+        <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-1">Before you read</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          What do you already know about this topic? What do you expect to find?
+        </p>
       </div>
-      <Textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder="Optional — write your prediction or prior knowledge..." className="min-h-[120px]" />
+      <Textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Optional — write your prediction or prior knowledge..."
+        className="min-h-[120px]"
+      />
       <Button onClick={onNext}>Continue →</Button>
     </div>
   );
@@ -162,10 +152,10 @@ function SummaryView({ summary, onNext }: { summary: string; onNext: () => void 
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="font-medium text-slate-900 mb-1">Section overview</h3>
-        <p className="text-sm text-slate-500">This section establishes:</p>
+        <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-1">Section overview</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400">This section establishes:</p>
       </div>
-      <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 text-sm leading-relaxed">
+      <div className="p-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-800 dark:text-slate-200 text-sm leading-relaxed">
         {summary}
       </div>
       <Button onClick={onNext}>Read section →</Button>
@@ -176,18 +166,35 @@ function SummaryView({ summary, onNext }: { summary: string; onNext: () => void 
 function ReadingView({ text, concepts, onConceptClick, onNext }: {
   text: string; concepts: Concept[]; onConceptClick: (t: string) => void; onNext: () => void;
 }) {
+  const [pacerOn, setPacerOn] = useState(false);
   const terms = concepts.map((c) => c.term);
   const html = highlightConcepts(text, terms);
+
   return (
     <div className="space-y-4">
-      <div
-        className="prose prose-sm max-w-none text-slate-800 leading-relaxed"
-        dangerouslySetInnerHTML={{ __html: html }}
-        onClick={(e) => {
-          const target = e.target as HTMLElement;
-          if (target.dataset.concept) onConceptClick(target.dataset.concept);
-        }}
-      />
+      <div className="flex items-center justify-between">
+        <span className="text-xs text-slate-400 dark:text-slate-500">Read the section below</span>
+        <button
+          onClick={() => setPacerOn((v) => !v)}
+          className="text-xs px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+        >
+          {pacerOn ? "Plain text" : "⏩ Pacer"}
+        </button>
+      </div>
+
+      {pacerOn ? (
+        <ReadingPacer text={text} />
+      ) : (
+        <div
+          className="prose prose-sm max-w-none text-slate-800 dark:text-slate-200 leading-relaxed dark:prose-invert"
+          dangerouslySetInnerHTML={{ __html: html }}
+          onClick={(e) => {
+            const target = e.target as HTMLElement;
+            if (target.dataset.concept) onConceptClick(target.dataset.concept);
+          }}
+        />
+      )}
+
       <Button onClick={onNext}>Done reading →</Button>
     </div>
   );
@@ -199,10 +206,17 @@ function PostField({ value, onChange, onSubmit, loading }: {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="font-medium text-slate-900 mb-1">Recall in your own words</h3>
-        <p className="text-sm text-slate-500">Summarize what you just read without looking back. Be specific.</p>
+        <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-1">Recall in your own words</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          Summarize what you just read without looking back. Be specific.
+        </p>
       </div>
-      <Textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder="Write what you remember..." className="min-h-[160px]" />
+      <Textarea
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder="Write what you remember..."
+        className="min-h-[160px]"
+      />
       <Button onClick={onSubmit} disabled={!value.trim() || loading}>
         {loading ? "Checking..." : "Submit recall →"}
       </Button>
@@ -213,22 +227,30 @@ function PostField({ value, onChange, onSubmit, loading }: {
 function CorrectionView({ feedback, onNext }: { feedback: RecallCheckResponse; onNext: () => void }) {
   return (
     <div className="space-y-4">
-      <h3 className="font-medium text-slate-900">Recall feedback</h3>
-      <p className="text-sm text-slate-700 leading-relaxed">{feedback.feedback}</p>
+      <h3 className="font-medium text-slate-900 dark:text-slate-100">Recall feedback</h3>
+      <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{feedback.feedback}</p>
       {feedback.gaps.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-red-600 uppercase tracking-wide mb-1">Gaps</p>
-          <ul className="space-y-1">{feedback.gaps.map((g, i) => (
-            <li key={i} className="text-sm text-slate-700 flex gap-2"><span className="text-red-400">·</span>{g}</li>
-          ))}</ul>
+          <p className="text-xs font-semibold text-red-600 dark:text-red-400 uppercase tracking-wide mb-1">Gaps</p>
+          <ul className="space-y-1">
+            {feedback.gaps.map((g, i) => (
+              <li key={i} className="text-sm text-slate-700 dark:text-slate-300 flex gap-2">
+                <span className="text-red-400">·</span>{g}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
       {feedback.strengths.length > 0 && (
         <div>
-          <p className="text-xs font-semibold text-green-700 uppercase tracking-wide mb-1">Strengths</p>
-          <ul className="space-y-1">{feedback.strengths.map((s, i) => (
-            <li key={i} className="text-sm text-slate-700 flex gap-2"><span className="text-green-500">·</span>{s}</li>
-          ))}</ul>
+          <p className="text-xs font-semibold text-green-700 dark:text-green-400 uppercase tracking-wide mb-1">Strengths</p>
+          <ul className="space-y-1">
+            {feedback.strengths.map((s, i) => (
+              <li key={i} className="text-sm text-slate-700 dark:text-slate-300 flex gap-2">
+                <span className="text-green-500">·</span>{s}
+              </li>
+            ))}
+          </ul>
         </div>
       )}
       <Button onClick={onNext}>Continue to questions →</Button>
@@ -242,12 +264,14 @@ function AdversarialView({ questions, onNext, isLast }: {
   return (
     <div className="space-y-4">
       <div>
-        <h3 className="font-medium text-slate-900 mb-1">Challenge questions</h3>
-        <p className="text-sm text-slate-500">These questions target assumptions and gaps in the document itself.</p>
+        <h3 className="font-medium text-slate-900 dark:text-slate-100 mb-1">Challenge questions</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          These questions target assumptions and gaps in the document itself.
+        </p>
       </div>
       <ul className="space-y-3">
         {questions.map((q, i) => (
-          <li key={i} className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-slate-800">
+          <li key={i} className="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg text-sm text-slate-800 dark:text-slate-200">
             {q}
           </li>
         ))}
