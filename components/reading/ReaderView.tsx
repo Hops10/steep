@@ -11,9 +11,10 @@ interface Props {
   rawDocument: RawDocument;
   processedDocument: ProcessedDocument;
   onNewDocument: () => void;
+  onOpenSettings?: () => void;
 }
 
-export function ReaderView({ rawDocument, processedDocument, onNewDocument }: Props) {
+export function ReaderView({ rawDocument, processedDocument, onNewDocument, onOpenSettings }: Props) {
   const documentId = useDocumentId(rawDocument);
   const [activeChunkIndex, setActiveChunkIndex] = useState(0);
   const [chunkStatuses, setChunkStatuses] = useState<ChunkStatus[]>(
@@ -57,12 +58,22 @@ export function ReaderView({ rawDocument, processedDocument, onNewDocument }: Pr
     <div className="h-screen flex flex-col">
       <header className="h-12 flex items-center justify-between px-6 border-b border-slate-200 bg-white shrink-0">
         <span className="font-semibold text-slate-900 text-sm">Steep</span>
-        <button
-          onClick={onNewDocument}
-          className="text-xs text-slate-500 hover:text-slate-900 underline"
-        >
-          Load new document
-        </button>
+        <div className="flex gap-3 items-center">
+          {onOpenSettings && (
+            <button
+              onClick={onOpenSettings}
+              className="text-xs text-slate-500 hover:text-slate-900 underline"
+            >
+              AI Settings
+            </button>
+          )}
+          <button
+            onClick={onNewDocument}
+            className="text-xs text-slate-500 hover:text-slate-900 underline"
+          >
+            Load new document
+          </button>
+        </div>
       </header>
 
       <div className="flex-1 flex overflow-hidden">

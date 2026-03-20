@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ConceptPanel } from "@/components/concepts/ConceptPanel";
 import { highlightConcepts } from "@/lib/highlight";
+import { loadAIConfig } from "@/lib/ai/config";
 
 interface Props {
   chunk: Chunk;
@@ -35,10 +36,11 @@ export function ChunkReader({ chunk, allConcepts, onComplete, isLast }: Props) {
     if (!postField.trim()) return;
     setLoadingRecall(true);
     try {
+      const aiConfig = loadAIConfig();
       const res = await fetch("/api/check-recall", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ chunkText: chunk.text, userRecall: postField }),
+        body: JSON.stringify({ chunkText: chunk.text, userRecall: postField, aiConfig }),
       });
       const data = await res.json();
       setRecallFeedback(data);

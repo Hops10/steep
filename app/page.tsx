@@ -5,6 +5,8 @@ import type { RawDocument, ProcessedDocument } from "@/types";
 import { DocumentIngestion } from "@/components/ingestion/DocumentIngestion";
 import { ProcessingView } from "@/components/reading/ProcessingView";
 import { ReaderView } from "@/components/reading/ReaderView";
+import { SettingsModal } from "@/components/settings/SettingsModal";
+import { loadAIConfig } from "@/lib/ai/config";
 
 type AppState = "ingestion" | "processing" | "reading";
 
@@ -13,6 +15,7 @@ export default function Home() {
   const [rawDocument, setRawDocument] = useState<RawDocument | null>(null);
   const [processedDocument, setProcessedDocument] = useState<ProcessedDocument | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   async function handleDocumentReady(doc: RawDocument) {
     setRawDocument(doc);
@@ -20,10 +23,11 @@ export default function Home() {
     setError(null);
 
     try {
+      const aiConfig = loadAIConfig();
       const res = await fetch("/api/process-document", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: doc.text }),
+        body: JSON.stringify({ text: doc.text, aiConfig }),
       });
       const data = await res.json();
 
@@ -59,6 +63,7 @@ export default function Home() {
         rawDocument={rawDocument}
         processedDocument={processedDocument}
         onNewDocument={handleNewDocument}
+        onOpenSettings={() => setSettingsOpen(true)}
       />
     );
   }
@@ -70,7 +75,16 @@ export default function Home() {
           {error}
         </div>
       )}
+      <div className="absolute top-4 right-4">
+        <button
+          onClick={() => setSettingsOpen(true)}
+          className="text-xs text-slate-500 hover:text-slate-900 underline"
+        >
+          AI Settings
+        </button>
+      </div>
       <DocumentIngestion onDocumentReady={handleDocumentReady} />
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
     </div>
   );
 }
