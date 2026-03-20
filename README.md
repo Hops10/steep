@@ -1,36 +1,63 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Steep — Active Reading for Professionals
 
-## Getting Started
+AI-powered reading comprehension tool with structured active reading and adversarial questioning.
 
-First, run the development server:
+## What it does
+
+**Sprint 1 — Active Reading Mode** (built)
+- Load documents via paste, URL, PDF, or Word (.docx)
+- AI processes document into logical chunks with summaries, concepts, and Socratic questions
+- 6-step active reading loop per chunk: predict → overview → read → recall → feedback → challenge
+- Concept Well: click any highlighted term → definition, mechanism, linked concepts (with recursive navigation)
+- Progress tracking (unread/read) persisted to localStorage
+
+**Sprint 2 — Passive Mode** (designed for, not built)
+- TTS with bidirectional voice
+- `heard` status distinct from `read` — hooks exist, never conflated
+
+## Tech Stack
+
+- Next.js 15 (App Router, TypeScript strict)
+- Tailwind CSS
+- Anthropic Claude API (`claude-sonnet-4-6`)
+- pdf-parse + mammoth for file ingestion
+- Jina.ai reader for URL fetching
+- localStorage for persistence (no auth/DB)
+
+## Setup
 
 ```bash
+cp .env.local.example .env.local
+# Add your ANTHROPIC_API_KEY
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Architecture
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```
+app/
+  api/
+    ingest-url/       → Jina.ai URL fetching
+    ingest-file/      → PDF + Word extraction
+    process-document/ → Claude AI processing pipeline
+    check-recall/     → Recall comparison + feedback
+components/
+  ingestion/          → DocumentIngestion (4 input modes)
+  reading/            → ChunkReader, ReaderView, DocumentSidebar, ProcessingView
+  concepts/           → ConceptPanel (recursive navigation)
+  ui/                 → Button, Textarea, Badge
+lib/
+  anthropic.ts        → Claude API client
+  storage.ts          → localStorage persistence
+  highlight.ts        → Concept term highlighting
+  utils.ts            → Shared utilities
+types/index.ts        → All TypeScript interfaces
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Design Principles
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. **Adversarial layer is the differentiator** — Socratic questioning challenges the *document*, not just comprehension
+2. **Concept Well** supports recursive definition diving with full breadcrumb navigation
+3. **Clean, professional UI** — not a consumer app
+4. **Sprint 2 hooks** — `heard` status, passive mode architecture ready but not implemented
