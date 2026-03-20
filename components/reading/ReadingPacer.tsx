@@ -171,7 +171,7 @@ export function ReadingPacer({ text }: Props) {
   return (
     <div className="space-y-4">
       <PacerToolbar state={state} wpm={wpm} onStart={start} onPause={pause} onResume={resume} onRestart={restart} onAdjust={adjustWpm} />
-      <div className="leading-relaxed text-sm text-slate-900 dark:text-white">
+      <div className="leading-relaxed text-sm !text-slate-900 dark:!text-white">
         {blocks.map((block, bi) => {
           const range = blockRanges[bi];
           if (bi === currentBlock) {
@@ -192,7 +192,7 @@ export function ReadingPacer({ text }: Props) {
           }
           return (
             <div key={bi} onClick={() => range.start >= 0 && clickPhrase(range.start)}
-              className="mb-4 prose prose-sm max-w-none cursor-pointer text-slate-900 dark:text-white prose-headings:text-slate-900 dark:prose-headings:text-white prose-p:text-slate-900 dark:prose-p:text-white prose-li:text-slate-900 dark:prose-li:text-white prose-strong:text-slate-900 dark:prose-strong:text-white">
+              className="mb-4 prose prose-sm max-w-none cursor-pointer [&_*]:!text-slate-900 dark:[&_*]:!text-white">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{block}</ReactMarkdown>
             </div>
           );

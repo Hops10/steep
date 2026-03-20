@@ -184,7 +184,7 @@ function ReadingView({ text, onNext }: {
       {pacerOn ? (
         <ReadingPacer text={text} />
       ) : (
-        <div className="prose prose-sm max-w-none leading-relaxed text-slate-900 dark:text-white prose-headings:text-slate-900 dark:prose-headings:text-white prose-p:text-slate-900 dark:prose-p:text-white prose-li:text-slate-900 dark:prose-li:text-white prose-strong:text-slate-900 dark:prose-strong:text-white">
+        <div className="prose prose-sm max-w-none leading-relaxed [&_*]:!text-slate-900 dark:[&_*]:!text-white">
           <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
         </div>
       )}
