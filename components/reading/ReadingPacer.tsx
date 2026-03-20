@@ -20,6 +20,21 @@ const MIN_WPM = 50;
 const MAX_WPM = 600;
 const WPM_STEP = 25;
 
+/** Strip markdown syntax to plain text for phrase-timing purposes. */
+function stripMarkdown(text: string): string {
+  return text
+    .replace(/#{1,6}\s+/g, "")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/\*(.+?)\*/g, "$1")
+    .replace(/`(.+?)`/g, "$1")
+    .replace(/^\s*[-*+]\s/gm, "")
+    .replace(/^\s*\d+\.\s/gm, "")
+    .replace(/\[(.+?)\]\(.+?\)/g, "$1")
+    .replace(/^\s*>\s/gm, "")
+    .replace(/^-{3,}$/gm, "")
+    .trim();
+}
+
 function parsePhrases(text: string): Phrase[] {
   const words = text.trim().split(/\s+/).filter(Boolean);
   const phrases: Phrase[] = [];
@@ -48,7 +63,7 @@ function loadWpm(): number {
 }
 
 export function ReadingPacer({ text }: Props) {
-  const [phrases] = useState(() => parsePhrases(text));
+  const [phrases] = useState(() => parsePhrases(stripMarkdown(text)));
   const [wpm, setWpm] = useState<number>(DEFAULT_WPM);
   const [state, setState] = useState<PacerState>("idle");
   const [index, setIndex] = useState(0);
@@ -249,6 +264,9 @@ function PacerToolbar({ state, wpm, onStart, onPause, onResume, onRestart, onAdj
     <div className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg flex-wrap">
       <PlayPauseBtn state={state} onStart={onStart} onPause={onPause} onResume={onResume} />
       <button onClick={onRestart} className={btn} title="Restart (R)">↺ Restart</button>
+      <span className="text-xs text-slate-400 dark:text-slate-500 italic hidden sm:inline">
+        Formatting hidden while pacing
+      </span>
       <div className="flex items-center gap-1 ml-auto">
         <button onClick={() => onAdjust(-WPM_STEP)} className={btn} title="Slow down (↓)">−</button>
         <span className="text-xs text-slate-600 dark:text-slate-400 w-16 text-center tabular-nums">

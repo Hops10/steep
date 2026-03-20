@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { Chunk, Concept, ReadingStep, RecallCheckResponse } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ConceptPanel } from "@/components/concepts/ConceptPanel";
 import { ReadingPacer } from "@/components/reading/ReadingPacer";
-import { highlightConcepts } from "@/lib/highlight";
 import { loadAIConfig } from "@/lib/ai/config";
 
 interface Props {
@@ -163,12 +164,10 @@ function SummaryView({ summary, onNext }: { summary: string; onNext: () => void 
   );
 }
 
-function ReadingView({ text, concepts, onConceptClick, onNext }: {
-  text: string; concepts: Concept[]; onConceptClick: (t: string) => void; onNext: () => void;
+function ReadingView({ text, onNext }: {
+  text: string; concepts?: Concept[]; onConceptClick?: (t: string) => void; onNext: () => void;
 }) {
   const [pacerOn, setPacerOn] = useState(false);
-  const terms = concepts.map((c) => c.term);
-  const html = highlightConcepts(text, terms);
 
   return (
     <div className="space-y-4">
@@ -185,14 +184,9 @@ function ReadingView({ text, concepts, onConceptClick, onNext }: {
       {pacerOn ? (
         <ReadingPacer text={text} />
       ) : (
-        <div
-          className="prose prose-sm max-w-none text-slate-800 dark:text-slate-200 leading-relaxed dark:prose-invert"
-          dangerouslySetInnerHTML={{ __html: html }}
-          onClick={(e) => {
-            const target = e.target as HTMLElement;
-            if (target.dataset.concept) onConceptClick(target.dataset.concept);
-          }}
-        />
+        <div className="prose prose-sm dark:prose-invert max-w-none text-slate-800 dark:text-slate-200 leading-relaxed">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+        </div>
       )}
 
       <Button onClick={onNext}>Done reading →</Button>
