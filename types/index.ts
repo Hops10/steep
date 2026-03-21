@@ -52,8 +52,14 @@ export type OpenAIVoice = "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimme
 export type OpenAITTSModel = "gpt-4o-audio-preview" | "tts-1" | "tts-1-hd";
 export type GeminiVoice = "Kore" | "Puck" | "Charon" | "Fenrir" | "Aoede";
 export type GrokVoice = "ara" | "eve" | "leo" | "rex" | "sal";
+export type TTSProvider = "openai" | "grok" | "gemini" | "browser";
 
 export interface VoiceConfig {
+  // TTS provider — independent of AI reasoning provider
+  ttsProvider?: TTSProvider;
+  ttsApiKey?: string; // optional override; if empty, falls back to AI provider key when providers match
+
+  // Per-provider voice settings
   openaiVoice?: OpenAIVoice;
   openaiTTSModel?: OpenAITTSModel;
   geminiVoice?: GeminiVoice;

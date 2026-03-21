@@ -64,37 +64,45 @@ export async function POST(req: NextRequest) {
     const { text, aiConfig, voiceConfig } = await req.json() as {
       text: string;
       aiConfig?: { provider: string; apiKey?: string; baseUrl?: string };
-      voiceConfig?: { openaiVoice?: string; openaiTTSModel?: string; geminiVoice?: string; grokVoice?: string };
+      voiceConfig?: { ttsProvider?: string; ttsApiKey?: string; openaiVoice?: string; openaiTTSModel?: string; geminiVoice?: string; grokVoice?: string };
     };
     if (!text) return NextResponse.json({ error: "text is required" }, { status: 400 });
 
     const processed = preprocessText(text);
-    const provider = aiConfig?.provider ?? "browser";
-    const apiKey = aiConfig?.apiKey;
 
-    // Providers with native TTS support
-    if (provider === "openai") {
-      if (!apiKey) return NextResponse.json({ useClientTTS: true, text: processed });
+    // Resolve TTS provider and API key independently of AI reasoning provider
+    const ttsProvider = voiceConfig?.ttsProvider ?? "browser";
+    const aiProvider = aiConfig?.provider ?? "browser";
+
+    // Key resolution:
+    // If ttsProvider matches aiConfig.provider → use voiceConfig.ttsApiKey ?? aiConfig.apiKey
+    // If different providers → use voiceConfig.ttsApiKey (may be empty → fall back to browser TTS)
+    const resolvedKey =
+      voiceConfig?.ttsApiKey ||
+      (ttsProvider === aiProvider ? aiConfig?.apiKey : undefined);
+
+    if (ttsProvider === "openai") {
+      if (!resolvedKey) return NextResponse.json({ useClientTTS: true, text: processed });
       const voice = voiceConfig?.openaiVoice ?? "alloy";
       const model = voiceConfig?.openaiTTSModel ?? "tts-1";
-      const audio = await openaiTTS(processed, apiKey, voice, model);
+      const audio = await openaiTTS(processed, resolvedKey, voice, model);
       return NextResponse.json({ audio, mimeType: "audio/mp3" });
     }
 
-    if (provider === "gemini") {
-      if (!apiKey) return NextResponse.json({ useClientTTS: true, text: processed });
-      const audio = await geminiTTS(processed, apiKey);
+    if (ttsProvider === "gemini") {
+      if (!resolvedKey) return NextResponse.json({ useClientTTS: true, text: processed });
+      const audio = await geminiTTS(processed, resolvedKey);
       return NextResponse.json({ audio, mimeType: "audio/wav" });
     }
 
-    if (provider === "grok") {
-      if (!apiKey) return NextResponse.json({ useClientTTS: true, text: processed });
+    if (ttsProvider === "grok") {
+      if (!resolvedKey) return NextResponse.json({ useClientTTS: true, text: processed });
       const voice = voiceConfig?.grokVoice ?? "eve";
-      const audio = await grokTTS(processed, apiKey, voice);
+      const audio = await grokTTS(processed, resolvedKey, voice);
       return NextResponse.json({ audio, mimeType: "audio/mp3" });
     }
 
-    // anthropic, ollama — fall back to browser TTS
+    // browser (default) or unrecognized provider — fall back to browser TTS
     return NextResponse.json({ useClientTTS: true, text: processed });
 
   } catch (err) {

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { PROVIDERS, getDefaultModel } from "@/lib/ai/providers";
 import { loadAIConfig, saveAIConfig } from "@/lib/ai/config";
 import type { AIConfig, AIProvider } from "@/lib/ai/types";
-import type { VoiceConfig, OpenAIVoice, OpenAITTSModel, GeminiVoice, GrokVoice } from "@/types";
+import type { VoiceConfig, OpenAIVoice, OpenAITTSModel, GeminiVoice, GrokVoice, TTSProvider } from "@/types";
 import { VOICE_CONFIG_KEY, DEFAULT_VOICE_CONFIG } from "@/types";
 import { Button } from "@/components/ui/button";
 
@@ -153,6 +153,22 @@ function AIPanel({ config, provider, customModel, isOllama, testStatus, testMess
   );
 }
 
+const TTS_PROVIDERS: { id: TTSProvider; label: string }[] = [
+  { id: "browser", label: "Browser (free)" },
+  { id: "openai", label: "OpenAI TTS" },
+  { id: "grok", label: "Grok TTS" },
+  { id: "gemini", label: "Gemini TTS" },
+];
+
+const PROVIDER_DISPLAY: Record<string, string> = {
+  openai: "OpenAI",
+  grok: "Grok",
+  gemini: "Gemini",
+  anthropic: "Anthropic",
+  ollama: "Ollama",
+  browser: "Browser",
+};
+
 function VoicePanel({ voice, onChange, aiProvider, cls }: {
   voice: VoiceConfig; onChange: (v: VoiceConfig) => void;
   aiProvider: string; cls: { input: string; label: string };
@@ -164,14 +180,55 @@ function VoicePanel({ voice, onChange, aiProvider, cls }: {
     window.speechSynthesis.onvoiceschanged = load;
   }, []);
 
-  const usesBrowserTTS = aiProvider === "anthropic" || aiProvider === "ollama";
+  const ttsProvider: TTSProvider = voice.ttsProvider ?? "browser";
+  const aiProviderLabel = PROVIDER_DISPLAY[aiProvider] ?? aiProvider;
+  const ttsProviderLabel = PROVIDER_DISPLAY[ttsProvider] ?? ttsProvider;
+  const providersMatch = ttsProvider === aiProvider;
+  const keyEmpty = !voice.ttsApiKey;
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-slate-500 dark:text-slate-400">
-        Passive listen mode uses your <strong>{aiProvider}</strong> provider for audio.
-      </p>
-      {aiProvider === "openai" && (
+      {/* Section A — TTS Provider */}
+      <div className="space-y-1">
+        <label className={cls.label}>Voice Provider</label>
+        <select
+          value={ttsProvider}
+          onChange={(e) => onChange({ ...voice, ttsProvider: e.target.value as TTSProvider })}
+          className={cls.input}
+        >
+          {TTS_PROVIDERS.map((p) => <option key={p.id} value={p.id}>{p.label}</option>)}
+        </select>
+      </div>
+
+      {/* Section B — API Key Override (hidden for browser) */}
+      {ttsProvider !== "browser" && (
+        <div className="space-y-1">
+          <label className={cls.label}>API Key</label>
+          <input
+            type="password"
+            value={voice.ttsApiKey ?? ""}
+            onChange={(e) => onChange({ ...voice, ttsApiKey: e.target.value })}
+            placeholder={providersMatch ? `Leave blank to use your ${aiProviderLabel} key` : `Enter ${ttsProviderLabel} API key`}
+            className={cls.input}
+          />
+          <p className="text-xs text-slate-400 dark:text-slate-500">
+            Leave blank to use your {aiProviderLabel} key when providers match.
+          </p>
+          {providersMatch && keyEmpty && (
+            <p className="text-xs text-green-600 dark:text-green-400">
+              ✓ Using your {aiProviderLabel} AI key
+            </p>
+          )}
+          {!providersMatch && keyEmpty && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              ⚠ Add a key for {ttsProviderLabel} — no key found, will fall back to browser TTS
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Section C — Voice selection (conditional on ttsProvider) */}
+      {ttsProvider === "openai" && (
         <>
           <div className="space-y-1">
             <label className={cls.label}>Voice</label>
@@ -187,7 +244,7 @@ function VoicePanel({ voice, onChange, aiProvider, cls }: {
           </div>
         </>
       )}
-      {aiProvider === "gemini" && (
+      {ttsProvider === "gemini" && (
         <div className="space-y-1">
           <label className={cls.label}>Voice</label>
           <select value={voice.geminiVoice ?? "Kore"} onChange={(e) => onChange({ ...voice, geminiVoice: e.target.value as GeminiVoice })} className={cls.input}>
@@ -195,7 +252,7 @@ function VoicePanel({ voice, onChange, aiProvider, cls }: {
           </select>
         </div>
       )}
-      {aiProvider === "grok" && (
+      {ttsProvider === "grok" && (
         <div className="space-y-1">
           <label className={cls.label}>Voice</label>
           <select value={voice.grokVoice ?? "eve"} onChange={(e) => onChange({ ...voice, grokVoice: e.target.value as GrokVoice })} className={cls.input}>
@@ -204,11 +261,8 @@ function VoicePanel({ voice, onChange, aiProvider, cls }: {
           <p className="text-xs text-slate-500 dark:text-slate-400">5 expressive voices · 20+ languages · $4.20/1M chars</p>
         </div>
       )}
-      {usesBrowserTTS && (
+      {ttsProvider === "browser" && (
         <div className="space-y-2">
-          <div className="p-3 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-xs text-slate-500 dark:text-slate-400">
-            {aiProvider} uses browser text-to-speech for passive mode.
-          </div>
           {browserVoices.length > 0 && (
             <div className="space-y-1">
               <label className={cls.label}>Browser Voice</label>
@@ -217,6 +271,9 @@ function VoicePanel({ voice, onChange, aiProvider, cls }: {
                 {browserVoices.map((v) => <option key={v.voiceURI} value={v.voiceURI}>{v.name} ({v.lang})</option>)}
               </select>
             </div>
+          )}
+          {browserVoices.length === 0 && (
+            <p className="text-xs text-slate-400 dark:text-slate-500">No browser voices found — system default will be used.</p>
           )}
         </div>
       )}
