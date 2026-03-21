@@ -46,17 +46,21 @@ export interface DocumentProgress {
   savedAt: number;
 }
 
-export type VoiceProvider = "openai" | "gemini" | "browser";
+export const VOICE_CONFIG_KEY = "steep_voice_config";
+
+export type OpenAIVoice = "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer";
+export type OpenAITTSModel = "gpt-4o-audio-preview" | "tts-1" | "tts-1-hd";
+export type GeminiVoice = "Kore" | "Puck" | "Charon" | "Fenrir" | "Aoede";
 
 export interface VoiceConfig {
-  provider: VoiceProvider;
-  voice?: string;
-  model?: string;
-  apiKey?: string;
+  openaiVoice?: OpenAIVoice;
+  openaiTTSModel?: OpenAITTSModel;
+  geminiVoice?: GeminiVoice;
+  browserVoiceURI?: string;
+  speed?: number;
 }
 
-export const DEFAULT_VOICE_CONFIG: VoiceConfig = { provider: "browser" };
-export const VOICE_CONFIG_KEY = "steep_voice_config";
+export const DEFAULT_VOICE_CONFIG: VoiceConfig = { speed: 1.0 };
 
 export type ReadingStep =
   | "pre-field"

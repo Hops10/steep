@@ -9,6 +9,8 @@ import { ModeSelector } from "./ModeSelector";
 import { SynthesisPrompt } from "./SynthesisPrompt";
 import { PassiveReader } from "@/components/passive/PassiveReader";
 import { initDocumentProgress, saveProgress, getProgress } from "@/lib/storage";
+import { loadAIConfig } from "@/lib/ai/config";
+import type { AIConfig } from "@/lib/ai/types";
 import { generateId } from "@/lib/utils";
 
 type ReaderMode = "select" | "passive" | "active";
@@ -28,6 +30,7 @@ export function ReaderView({ rawDocument, processedDocument, onNewDocument, onOp
     processedDocument.chunks.map(() => "unread")
   );
   const [voiceConfig, setVoiceConfig] = useState<VoiceConfig>(DEFAULT_VOICE_CONFIG);
+  const [aiConfig, setAiConfig] = useState<AIConfig>(loadAIConfig);
 
   useEffect(() => {
     const chunkIds = processedDocument.chunks.map((c) => c.id);
@@ -38,6 +41,7 @@ export function ReaderView({ rawDocument, processedDocument, onNewDocument, onOp
       const raw = localStorage.getItem(VOICE_CONFIG_KEY);
       if (raw) setVoiceConfig(JSON.parse(raw) as VoiceConfig);
     } catch { /* use default */ }
+    setAiConfig(loadAIConfig());
   }, [documentId, processedDocument]);
 
   const markChunkRead = useCallback(
@@ -84,6 +88,7 @@ export function ReaderView({ rawDocument, processedDocument, onNewDocument, onOp
       <PassiveReader
         rawDocument={rawDocument}
         processedDocument={processedDocument}
+        aiConfig={aiConfig}
         voiceConfig={voiceConfig}
         onNewDocument={onNewDocument}
         onOpenSettings={onOpenSettings}

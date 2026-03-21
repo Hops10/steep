@@ -2,16 +2,18 @@
 
 import { useState, useRef, useCallback } from "react";
 import type { VoiceConfig } from "@/types";
+import type { AIConfig } from "@/lib/ai/types";
 import { pcmToWav, base64ToArrayBuffer } from "@/lib/audio";
 import type { AudioState, Speed } from "./AudioToolbar";
 
 interface Options {
   speed: Speed;
+  aiConfig: AIConfig;
   voiceConfig: VoiceConfig;
   onChunkEnded: (index: number) => void;
 }
 
-export function usePassiveAudio({ speed, voiceConfig, onChunkEnded }: Options) {
+export function usePassiveAudio({ speed, aiConfig, voiceConfig, onChunkEnded }: Options) {
   const [audioState, setAudioState] = useState<AudioState>("idle");
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
@@ -26,10 +28,14 @@ export function usePassiveAudio({ speed, voiceConfig, onChunkEnded }: Options) {
     window.speechSynthesis.cancel();
     const utt = new SpeechSynthesisUtterance(text);
     utt.rate = speed;
+    if (voiceConfig.browserVoiceURI) {
+      const m = window.speechSynthesis.getVoices().find(v => v.voiceURI === voiceConfig.browserVoiceURI);
+      if (m) utt.voice = m;
+    }
     utt.onend = () => onChunkEnded(index);
     utt.onerror = () => setAudioState("idle");
     window.speechSynthesis.speak(utt);
-  }, [speed, onChunkEnded]);
+  }, [speed, voiceConfig.browserVoiceURI, onChunkEnded]);
 
   const playBuffer = useCallback(async (base64: string, mimeType: string, index: number) => {
     if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
@@ -53,22 +59,16 @@ export function usePassiveAudio({ speed, voiceConfig, onChunkEnded }: Options) {
       const res = await fetch("/api/tts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          text: chunkText,
-          provider: voiceConfig.provider,
-          apiKey: voiceConfig.apiKey,
-          voice: voiceConfig.voice,
-          model: voiceConfig.model,
-        }),
+        body: JSON.stringify({ text: chunkText, aiConfig, voiceConfig }),
       });
       const data = await res.json() as {
-        audio?: string; mimeType?: string; provider?: string; text?: string; error?: string;
+        audio?: string; mimeType?: string; useClientTTS?: boolean; text?: string; error?: string;
       };
       if (data.error) throw new Error(data.error);
       setAudioState("playing");
-      if (data.provider === "browser" || !data.audio) {
+      if (data.useClientTTS) {
         playBrowser(data.text ?? chunkText, index);
-      } else {
+      } else if (data.audio) {
         await playBuffer(data.audio, data.mimeType ?? "audio/mp3", index);
       }
     } catch (err) {

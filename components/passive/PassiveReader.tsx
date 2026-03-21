@@ -1,18 +1,20 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { ProcessedDocument, ChunkStatus, RawDocument, VoiceConfig } from "@/types";
+import type { AIConfig } from "@/lib/ai/types";
 import { AudioToolbar, type Speed } from "./AudioToolbar";
 import { PassiveChunkList } from "./PassiveChunkList";
 import { usePassiveAudio } from "./usePassiveAudio";
-import { getPassiveFlags, savePassiveFlags, getPassiveProgress, savePassiveProgress } from "@/lib/storage";
+import { getPassiveFlags, togglePassiveFlag, getPassiveStatuses, savePassiveStatuses } from "@/lib/storage";
 import { generateId } from "@/lib/utils";
 
 interface Props {
   rawDocument: RawDocument;
   processedDocument: ProcessedDocument;
+  aiConfig: AIConfig;
   voiceConfig: VoiceConfig;
   onNewDocument: () => void;
   onOpenSettings?: () => void;
@@ -20,7 +22,7 @@ interface Props {
 }
 
 export function PassiveReader({
-  rawDocument, processedDocument, voiceConfig,
+  rawDocument, processedDocument, aiConfig, voiceConfig,
   onNewDocument, onOpenSettings, onSwitchToActive,
 }: Props) {
   const documentId = useDocumentId(rawDocument);
@@ -31,32 +33,38 @@ export function PassiveReader({
   const [showEndPanel, setShowEndPanel] = useState(false);
   const [recommendations, setRecommendations] = useState<{ chunkId: string; reason: string }[]>([]);
 
+  // Ref to break circular dependency: handleChunkEnded uses audio.play; audio uses handleChunkEnded
+  const audioRef = useRef<ReturnType<typeof usePassiveAudio> | null>(null);
+
   useEffect(() => {
     setFlaggedIds(new Set(getPassiveFlags(documentId)));
-    const progress = getPassiveProgress(documentId);
-    setStatuses(processedDocument.chunks.map((c) => progress[c.id] ?? "unread"));
+    const saved = getPassiveStatuses(documentId);
+    setStatuses(processedDocument.chunks.map((c) => saved[c.id] ?? "unread"));
   }, [documentId, processedDocument]);
 
   const markHeard = useCallback((index: number) => {
     const chunkId = processedDocument.chunks[index]?.id;
     if (!chunkId) return;
     setStatuses((prev) => { const n = [...prev]; if (n[index] !== "read") n[index] = "heard"; return n; });
-    const progress = getPassiveProgress(documentId);
-    if (progress[chunkId] !== "read") progress[chunkId] = "heard";
-    savePassiveProgress(documentId, progress);
-  }, [documentId, processedDocument]);
+    const saved = getPassiveStatuses(documentId);
+    if (saved[chunkId] !== "read") saved[chunkId] = "heard";
+    savePassiveStatuses(documentId, saved);
+  }, [documentId, processedDocument.chunks]);
 
   const handleChunkEnded = useCallback((index: number) => {
     markHeard(index);
     const nextIndex = index + 1;
     if (nextIndex < processedDocument.chunks.length) {
       setActiveIndex(nextIndex);
+      void audioRef.current?.play(processedDocument.chunks[nextIndex]?.text ?? "", nextIndex);
     } else {
       setShowEndPanel(true);
+      audioRef.current?.setAudioState("done");
     }
-  }, [markHeard, processedDocument.chunks.length]);
+  }, [markHeard, processedDocument.chunks]);
 
-  const audio = usePassiveAudio({ speed, voiceConfig, onChunkEnded: handleChunkEnded });
+  const audio = usePassiveAudio({ speed, aiConfig, voiceConfig, onChunkEnded: handleChunkEnded });
+  audioRef.current = audio;
 
   const handlePlay = useCallback(() => {
     if (audio.audioState === "paused") { audio.resume(); return; }
@@ -78,12 +86,7 @@ export function PassiveReader({
   }, [audio]);
 
   const handleToggleFlag = useCallback((chunkId: string) => {
-    setFlaggedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(chunkId)) next.delete(chunkId); else next.add(chunkId);
-      savePassiveFlags(documentId, Array.from(next));
-      return next;
-    });
+    setFlaggedIds(new Set(togglePassiveFlag(documentId, chunkId)));
   }, [documentId]);
 
   const handleStartActive = useCallback(() => {
