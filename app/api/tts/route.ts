@@ -51,29 +51,38 @@ async function geminiTTS(text: string, apiKey: string): Promise<string> {
 
 export async function POST(req: NextRequest) {
   try {
-    const { text, provider, apiKey, voice, model } = await req.json() as {
-      text: string; provider: string; apiKey?: string; voice?: string; model?: string;
+    const { text, aiConfig, voiceConfig } = await req.json() as {
+      text: string;
+      aiConfig?: { provider: string; apiKey?: string; baseUrl?: string };
+      voiceConfig?: { openaiVoice?: string; openaiTTSModel?: string; geminiVoice?: string };
     };
     if (!text) return NextResponse.json({ error: "text is required" }, { status: 400 });
 
     const processed = preprocessText(text);
+    const provider = aiConfig?.provider ?? "browser";
+    const apiKey = aiConfig?.apiKey;
 
-    if (provider === "browser") {
-      return NextResponse.json({ provider: "browser", text: processed });
-    }
+    // Providers with native TTS support
     if (provider === "openai") {
-      if (!apiKey) return NextResponse.json({ error: "OpenAI API key required" }, { status: 400 });
-      const audio = await openaiTTS(processed, apiKey, voice ?? "alloy", model ?? "tts-1");
-      return NextResponse.json({ provider: "openai", audio, mimeType: "audio/mp3" });
+      if (!apiKey) return NextResponse.json({ useClientTTS: true, text: processed });
+      const voice = voiceConfig?.openaiVoice ?? "alloy";
+      const model = voiceConfig?.openaiTTSModel ?? "tts-1";
+      const audio = await openaiTTS(processed, apiKey, voice, model);
+      return NextResponse.json({ audio, mimeType: "audio/mp3" });
     }
+
     if (provider === "gemini") {
-      if (!apiKey) return NextResponse.json({ error: "Gemini API key required" }, { status: 400 });
+      if (!apiKey) return NextResponse.json({ useClientTTS: true, text: processed });
       const audio = await geminiTTS(processed, apiKey);
-      return NextResponse.json({ provider: "gemini", audio, mimeType: "audio/wav" });
+      return NextResponse.json({ audio, mimeType: "audio/wav" });
     }
-    return NextResponse.json({ error: "Unknown TTS provider" }, { status: 400 });
+
+    // anthropic, grok, ollama — fall back to browser TTS
+    return NextResponse.json({ useClientTTS: true, text: processed });
+
   } catch (err) {
     console.error("TTS error:", err);
-    return NextResponse.json({ error: err instanceof Error ? err.message : "TTS failed" }, { status: 500 });
+    // On any error, fall back to browser TTS rather than breaking passive mode
+    return NextResponse.json({ useClientTTS: true, text: "Audio generation failed. Using browser voice." });
   }
 }
