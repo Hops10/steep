@@ -8,7 +8,7 @@ import type { VoiceConfig, OpenAIVoice, OpenAITTSModel, GeminiVoice } from "@/ty
 import { VOICE_CONFIG_KEY, DEFAULT_VOICE_CONFIG } from "@/types";
 import { Button } from "@/components/ui/button";
 
-interface Props { open: boolean; onClose: () => void }
+interface Props { open: boolean; onClose: () => void; defaultTab?: "ai" | "voice" }
 
 const OPENAI_VOICES: OpenAIVoice[] = ["alloy", "echo", "fable", "onyx", "nova", "shimmer"];
 const OPENAI_TTS_MODELS: { id: OpenAITTSModel; label: string }[] = [
@@ -26,16 +26,16 @@ function loadVoiceConfig(): VoiceConfig {
 
 export function loadVoiceConfigPublic(): VoiceConfig { return loadVoiceConfig(); }
 
-export function SettingsModal({ open, onClose }: Props) {
+export function SettingsModal({ open, onClose, defaultTab = "ai" }: Props) {
   const [config, setConfig] = useState<AIConfig>(loadAIConfig);
   const [voice, setVoice] = useState<VoiceConfig>(DEFAULT_VOICE_CONFIG);
   const [customModel, setCustomModel] = useState("");
   const [testStatus, setTestStatus] = useState<"idle" | "loading" | "ok" | "error">("idle");
   const [testMessage, setTestMessage] = useState("");
-  const [tab, setTab] = useState<"ai" | "voice">("ai");
+  const [tab, setTab] = useState<"ai" | "voice">(defaultTab);
 
   useEffect(() => {
-    if (open) { setConfig(loadAIConfig()); setVoice(loadVoiceConfig()); setTestStatus("idle"); }
+    if (open) { setConfig(loadAIConfig()); setVoice(loadVoiceConfig()); setTestStatus("idle"); setTab(defaultTab); }
   }, [open]);
 
   if (!open) return null;

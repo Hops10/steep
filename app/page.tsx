@@ -16,6 +16,12 @@ export default function Home() {
   const [processedDocument, setProcessedDocument] = useState<ProcessedDocument | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsTab, setSettingsTab] = useState<"ai" | "voice">("ai");
+
+  function openSettings(tab: "ai" | "voice" = "ai") {
+    setSettingsTab(tab);
+    setSettingsOpen(true);
+  }
 
   async function handleDocumentReady(doc: RawDocument) {
     setRawDocument(doc);
@@ -47,17 +53,25 @@ export default function Home() {
   }
 
   if (appState === "processing" && rawDocument) {
-    return <ProcessingView title={rawDocument.title} wordCount={rawDocument.wordCount} />;
+    return (
+      <>
+        <ProcessingView title={rawDocument.title} wordCount={rawDocument.wordCount} />
+        <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} defaultTab={settingsTab} />
+      </>
+    );
   }
 
   if (appState === "reading" && rawDocument && processedDocument) {
     return (
-      <ReaderView
-        rawDocument={rawDocument}
-        processedDocument={processedDocument}
-        onNewDocument={handleNewDocument}
-        onOpenSettings={() => setSettingsOpen(true)}
-      />
+      <>
+        <ReaderView
+          rawDocument={rawDocument}
+          processedDocument={processedDocument}
+          onNewDocument={handleNewDocument}
+          onOpenSettings={() => openSettings("voice")}
+        />
+        <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} defaultTab={settingsTab} />
+      </>
     );
   }
 
@@ -77,7 +91,7 @@ export default function Home() {
         </button>
       </div>
       <DocumentIngestion onDocumentReady={handleDocumentReady} />
-      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} />
+      <SettingsModal open={settingsOpen} onClose={() => setSettingsOpen(false)} defaultTab={settingsTab} />
     </div>
   );
 }
