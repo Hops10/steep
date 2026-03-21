@@ -2,15 +2,16 @@
 
 import { useState, useRef, useCallback } from "react";
 import type { VoiceConfig } from "@/types";
+import { pcmToWav, base64ToArrayBuffer } from "@/lib/audio";
 import type { AudioState, Speed } from "./AudioToolbar";
 
-interface UsePassiveAudioOptions {
+interface Options {
   speed: Speed;
   voiceConfig: VoiceConfig;
   onChunkEnded: (index: number) => void;
 }
 
-export function usePassiveAudio({ speed, voiceConfig, onChunkEnded }: UsePassiveAudioOptions) {
+export function usePassiveAudio({ speed, voiceConfig, onChunkEnded }: Options) {
   const [audioState, setAudioState] = useState<AudioState>("idle");
   const audioCtxRef = useRef<AudioContext | null>(null);
   const sourceRef = useRef<AudioBufferSourceNode | null>(null);
@@ -30,13 +31,13 @@ export function usePassiveAudio({ speed, voiceConfig, onChunkEnded }: UsePassive
     window.speechSynthesis.speak(utt);
   }, [speed, onChunkEnded]);
 
-  const playBuffer = useCallback(async (base64: string, index: number) => {
+  const playBuffer = useCallback(async (base64: string, mimeType: string, index: number) => {
     if (!audioCtxRef.current || audioCtxRef.current.state === "closed") {
       audioCtxRef.current = new AudioContext();
     }
     const ctx = audioCtxRef.current;
-    const bytes = Uint8Array.from(atob(base64), (c) => c.charCodeAt(0));
-    const buffer = await ctx.decodeAudioData(bytes.buffer);
+    const arrayBuf = mimeType.includes("pcm") ? pcmToWav(base64) : base64ToArrayBuffer(base64);
+    const buffer = await ctx.decodeAudioData(arrayBuf);
     const source = ctx.createBufferSource();
     source.buffer = buffer;
     source.playbackRate.value = speed;
@@ -60,13 +61,15 @@ export function usePassiveAudio({ speed, voiceConfig, onChunkEnded }: UsePassive
           model: voiceConfig.model,
         }),
       });
-      const data = await res.json();
+      const data = await res.json() as {
+        audio?: string; mimeType?: string; provider?: string; text?: string; error?: string;
+      };
       if (data.error) throw new Error(data.error);
       setAudioState("playing");
-      if (data.provider === "browser") {
+      if (data.provider === "browser" || !data.audio) {
         playBrowser(data.text ?? chunkText, index);
       } else {
-        await playBuffer(data.audio, index);
+        await playBuffer(data.audio, data.mimeType ?? "audio/mp3", index);
       }
     } catch (err) {
       console.error("TTS play error:", err);

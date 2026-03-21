@@ -28,9 +28,7 @@ export interface RawDocument {
   sourceUrl?: string;
 }
 
-// Per-chunk progress state
 export type ChunkStatus = "unread" | "heard" | "read";
-// "heard" = listened in passive mode; "read" = completed active loop
 
 export interface ChunkProgress {
   chunkId: string;
@@ -48,20 +46,18 @@ export interface DocumentProgress {
   savedAt: number;
 }
 
-// Voice/TTS configuration (Sprint 2)
 export type VoiceProvider = "openai" | "gemini" | "browser";
 
 export interface VoiceConfig {
   provider: VoiceProvider;
-  voice?: string;  // openai: alloy/echo/fable/onyx/nova/shimmer
-  model?: string;  // openai: tts-1 / tts-1-hd
+  voice?: string;
+  model?: string;
   apiKey?: string;
 }
 
 export const DEFAULT_VOICE_CONFIG: VoiceConfig = { provider: "browser" };
 export const VOICE_CONFIG_KEY = "steep_voice_config";
 
-// Active reading session state
 export type ReadingStep =
   | "pre-field"
   | "summary"
@@ -81,7 +77,6 @@ export interface RecallCheckResponse {
   strengths: string[];
 }
 
-// Synthesis layer (Sprint 2)
 export interface ReviewRecommendation {
   timing: "1 day" | "1 week" | "1 month";
   focus: string;
@@ -92,7 +87,6 @@ export interface SynthesisResponse {
   reviewRecommendations: ReviewRecommendation[];
 }
 
-// Passive recommendations (Sprint 2)
 export interface PassiveRecommendation {
   chunkId: string;
   reason: string;

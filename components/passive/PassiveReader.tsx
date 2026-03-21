@@ -51,14 +51,10 @@ export function PassiveReader({
     const nextIndex = index + 1;
     if (nextIndex < processedDocument.chunks.length) {
       setActiveIndex(nextIndex);
-      // auto-play next chunk via play() below is triggered by activeIndex change
-      void audio.play(processedDocument.chunks[nextIndex].text, nextIndex);
     } else {
       setShowEndPanel(true);
-      audio.setAudioState("done");
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [markHeard, processedDocument]);
+  }, [markHeard, processedDocument.chunks.length]);
 
   const audio = usePassiveAudio({ speed, voiceConfig, onChunkEnded: handleChunkEnded });
 
@@ -102,13 +98,15 @@ export function PassiveReader({
 
   useEffect(() => {
     if (!showEndPanel) return;
+    audio.setAudioState("done");
     const chunks = processedDocument.chunks.map((c, i) => ({ id: c.id, title: `Section ${i + 1}`, summary: c.summary }));
     fetch("/api/passive-recommendations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ chunks, flaggedIds: Array.from(flaggedIds) }),
     }).then((r) => r.json()).then((d) => { if (d.recommendations) setRecommendations(d.recommendations); }).catch(() => {});
-  }, [showEndPanel, processedDocument, flaggedIds]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showEndPanel]);
 
   return (
     <div className="h-screen flex flex-col">
@@ -120,14 +118,7 @@ export function PassiveReader({
         </div>
       </header>
       <div className="flex-1 flex overflow-hidden">
-        <PassiveChunkList
-          chunks={processedDocument.chunks}
-          statuses={statuses}
-          flaggedIds={flaggedIds}
-          activeIndex={activeIndex}
-          onChunkSelect={handleChunkSelect}
-          onToggleFlag={handleToggleFlag}
-        />
+        <PassiveChunkList chunks={processedDocument.chunks} statuses={statuses} flaggedIds={flaggedIds} activeIndex={activeIndex} onChunkSelect={handleChunkSelect} onToggleFlag={handleToggleFlag} />
         <main className="flex-1 overflow-y-auto bg-white dark:bg-slate-900 pb-24">
           {showEndPanel
             ? <EndPanel recommendations={recommendations} chunks={processedDocument.chunks} onStartActive={handleStartActive} onRestart={handleRestart} />
