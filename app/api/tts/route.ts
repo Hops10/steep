@@ -34,6 +34,16 @@ async function openaiTTS(text: string, apiKey: string, voice: string, model: str
   return Buffer.from(await response.arrayBuffer()).toString("base64");
 }
 
+async function grokTTS(text: string, apiKey: string, voice: string): Promise<string> {
+  const res = await fetch("https://api.x.ai/v1/tts", {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${apiKey}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ text, voice_id: voice, language: "en" }),
+  });
+  if (!res.ok) throw new Error(`Grok TTS error ${res.status}: ${await res.text()}`);
+  return Buffer.from(await res.arrayBuffer()).toString("base64");
+}
+
 async function geminiTTS(text: string, apiKey: string): Promise<string> {
   const { GoogleGenAI } = await import("@google/genai");
   const ai = new GoogleGenAI({ apiKey });
@@ -54,7 +64,7 @@ export async function POST(req: NextRequest) {
     const { text, aiConfig, voiceConfig } = await req.json() as {
       text: string;
       aiConfig?: { provider: string; apiKey?: string; baseUrl?: string };
-      voiceConfig?: { openaiVoice?: string; openaiTTSModel?: string; geminiVoice?: string };
+      voiceConfig?: { openaiVoice?: string; openaiTTSModel?: string; geminiVoice?: string; grokVoice?: string };
     };
     if (!text) return NextResponse.json({ error: "text is required" }, { status: 400 });
 
@@ -77,7 +87,14 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ audio, mimeType: "audio/wav" });
     }
 
-    // anthropic, grok, ollama — fall back to browser TTS
+    if (provider === "grok") {
+      if (!apiKey) return NextResponse.json({ useClientTTS: true, text: processed });
+      const voice = voiceConfig?.grokVoice ?? "eve";
+      const audio = await grokTTS(processed, apiKey, voice);
+      return NextResponse.json({ audio, mimeType: "audio/mp3" });
+    }
+
+    // anthropic, ollama — fall back to browser TTS
     return NextResponse.json({ useClientTTS: true, text: processed });
 
   } catch (err) {

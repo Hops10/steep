@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { PROVIDERS, getDefaultModel } from "@/lib/ai/providers";
 import { loadAIConfig, saveAIConfig } from "@/lib/ai/config";
 import type { AIConfig, AIProvider } from "@/lib/ai/types";
-import type { VoiceConfig, OpenAIVoice, OpenAITTSModel, GeminiVoice } from "@/types";
+import type { VoiceConfig, OpenAIVoice, OpenAITTSModel, GeminiVoice, GrokVoice } from "@/types";
 import { VOICE_CONFIG_KEY, DEFAULT_VOICE_CONFIG } from "@/types";
 import { Button } from "@/components/ui/button";
 
@@ -17,6 +17,7 @@ const OPENAI_TTS_MODELS: { id: OpenAITTSModel; label: string }[] = [
   { id: "gpt-4o-audio-preview", label: "gpt-4o-audio (natural)" },
 ];
 const GEMINI_VOICES: GeminiVoice[] = ["Kore", "Puck", "Charon", "Fenrir", "Aoede"];
+const GROK_VOICES: GrokVoice[] = ["ara", "eve", "leo", "rex", "sal"];
 
 function loadVoiceConfig(): VoiceConfig {
   if (typeof window === "undefined") return DEFAULT_VOICE_CONFIG;
@@ -163,7 +164,7 @@ function VoicePanel({ voice, onChange, aiProvider, cls }: {
     window.speechSynthesis.onvoiceschanged = load;
   }, []);
 
-  const usesBrowserTTS = aiProvider === "anthropic" || aiProvider === "ollama" || aiProvider === "grok";
+  const usesBrowserTTS = aiProvider === "anthropic" || aiProvider === "ollama";
 
   return (
     <div className="space-y-4">
@@ -192,6 +193,15 @@ function VoicePanel({ voice, onChange, aiProvider, cls }: {
           <select value={voice.geminiVoice ?? "Kore"} onChange={(e) => onChange({ ...voice, geminiVoice: e.target.value as GeminiVoice })} className={cls.input}>
             {GEMINI_VOICES.map((v) => <option key={v} value={v}>{v}</option>)}
           </select>
+        </div>
+      )}
+      {aiProvider === "grok" && (
+        <div className="space-y-1">
+          <label className={cls.label}>Voice</label>
+          <select value={voice.grokVoice ?? "eve"} onChange={(e) => onChange({ ...voice, grokVoice: e.target.value as GrokVoice })} className={cls.input}>
+            {GROK_VOICES.map((v) => <option key={v} value={v}>{v.charAt(0).toUpperCase() + v.slice(1)}</option>)}
+          </select>
+          <p className="text-xs text-slate-500 dark:text-slate-400">5 expressive voices · 20+ languages · $4.20/1M chars</p>
         </div>
       )}
       {usesBrowserTTS && (

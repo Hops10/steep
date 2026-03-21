@@ -51,11 +51,13 @@ export const VOICE_CONFIG_KEY = "steep_voice_config";
 export type OpenAIVoice = "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer";
 export type OpenAITTSModel = "gpt-4o-audio-preview" | "tts-1" | "tts-1-hd";
 export type GeminiVoice = "Kore" | "Puck" | "Charon" | "Fenrir" | "Aoede";
+export type GrokVoice = "ara" | "eve" | "leo" | "rex" | "sal";
 
 export interface VoiceConfig {
   openaiVoice?: OpenAIVoice;
   openaiTTSModel?: OpenAITTSModel;
   geminiVoice?: GeminiVoice;
+  grokVoice?: GrokVoice;
   browserVoiceURI?: string;
   speed?: number;
 }
