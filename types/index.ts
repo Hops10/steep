@@ -30,7 +30,19 @@ export interface RawDocument {
 
 // Per-chunk progress state
 export type ChunkStatus = "unread" | "heard" | "read";
-// "heard" reserved for Sprint 2 (passive/TTS mode)
+
+// Voice/TTS configuration (Sprint 2)
+export type VoiceProvider = "openai" | "gemini" | "browser";
+
+export interface VoiceConfig {
+  provider: VoiceProvider;
+  voice?: string;
+  model?: string;
+  apiKey?: string;
+}
+
+export const DEFAULT_VOICE_CONFIG: VoiceConfig = { provider: "browser" };
+export const VOICE_CONFIG_KEY = "steep_voice_config";
 
 export interface ChunkProgress {
   chunkId: string;

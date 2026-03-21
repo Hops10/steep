@@ -2,6 +2,8 @@ import type { DocumentProgress, ChunkProgress, ChunkStatus } from "@/types";
 
 const PROGRESS_KEY = "steep:progress";
 const DOCUMENTS_KEY = "steep:documents";
+const PASSIVE_FLAGS_KEY = "steep_passive_flags";
+const PASSIVE_PROGRESS_KEY = "steep_passive_progress";
 
 export function saveProgress(progress: DocumentProgress): void {
   if (typeof window === "undefined") return;
@@ -64,4 +66,51 @@ export function initDocumentProgress(
   };
   saveProgress(progress);
   return progress;
+}
+
+// ── Passive mode: flags ───────────────────────────────────────────────────────
+
+export function getPassiveFlags(documentId: string): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const all = JSON.parse(localStorage.getItem(PASSIVE_FLAGS_KEY) ?? "{}");
+    return all[documentId] ?? [];
+  } catch {
+    return [];
+  }
+}
+
+export function savePassiveFlags(documentId: string, flaggedIds: string[]): void {
+  if (typeof window === "undefined") return;
+  const all = (() => {
+    try { return JSON.parse(localStorage.getItem(PASSIVE_FLAGS_KEY) ?? "{}"); }
+    catch { return {}; }
+  })();
+  all[documentId] = flaggedIds;
+  localStorage.setItem(PASSIVE_FLAGS_KEY, JSON.stringify(all));
+}
+
+// ── Passive mode: per-chunk heard/unread status ───────────────────────────────
+
+export function getPassiveProgress(documentId: string): Record<string, ChunkStatus> {
+  if (typeof window === "undefined") return {};
+  try {
+    const all = JSON.parse(localStorage.getItem(PASSIVE_PROGRESS_KEY) ?? "{}");
+    return all[documentId] ?? {};
+  } catch {
+    return {};
+  }
+}
+
+export function savePassiveProgress(
+  documentId: string,
+  statuses: Record<string, ChunkStatus>
+): void {
+  if (typeof window === "undefined") return;
+  const all = (() => {
+    try { return JSON.parse(localStorage.getItem(PASSIVE_PROGRESS_KEY) ?? "{}"); }
+    catch { return {}; }
+  })();
+  all[documentId] = statuses;
+  localStorage.setItem(PASSIVE_PROGRESS_KEY, JSON.stringify(all));
 }
