@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 function preprocessText(text: string): string {
   return text
-    .replace(/```[\s\S]*?```/g, "code block omitted")
-    .replace(/\$\$[\s\S]*?\$\$/g, "equation omitted")
+    .replace(/```[^`]*```/g, "code block omitted")
+    .replace(/\$\$[^$]*\$\$/g, "equation omitted")
     .replace(/\$[^$\n]+\$/g, "equation omitted")
     .replace(/^\|.+\|$/gm, "")
     .replace(/^\s*\|?[-: |]+\|?\s*$/gm, "table omitted")
@@ -22,38 +22,38 @@ function preprocessText(text: string): string {
     .trim();
 }
 
-async function openaiTTS(
-  text: string, apiKey: string, voice: string, model: string
-): Promise<string> {
+async function openaiTTS(text: string, apiKey: string, voice: string, model: string): Promise<string> {
   const { default: OpenAI } = await import("openai");
   const client = new OpenAI({ apiKey });
   const response = await client.audio.speech.create({
-    model: model || "tts-1",
-    voice: (voice || "alloy") as "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer",
+    model: model as "tts-1" | "tts-1-hd",
+    voice: voice as "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer",
     input: text,
     response_format: "mp3",
   });
-  const buffer = Buffer.from(await response.arrayBuffer());
-  return buffer.toString("base64");
+  return Buffer.from(await response.arrayBuffer()).toString("base64");
 }
 
 async function geminiTTS(text: string, apiKey: string): Promise<string> {
   const { GoogleGenAI } = await import("@google/genai");
   const ai = new GoogleGenAI({ apiKey });
-  const response = await ai.models.generateContent({
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const response = await (ai.models.generateContent as any)({
     model: "gemini-2.0-flash-exp",
     contents: [{ role: "user", parts: [{ text: `Read aloud: ${text}` }] }],
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    config: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } } as any,
+    config: { responseModalities: ["AUDIO"], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } } },
   });
-  const audioData = response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-  if (!audioData) throw new Error("No audio data returned from Gemini");
-  return audioData;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = (response as any)?.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data as string | undefined;
+  if (!data) throw new Error("No audio data from Gemini");
+  return data;
 }
 
 export async function POST(req: NextRequest) {
   try {
-    const { text, provider, apiKey, voice, model } = await req.json();
+    const { text, provider, apiKey, voice, model } = await req.json() as {
+      text: string; provider: string; apiKey?: string; voice?: string; model?: string;
+    };
     if (!text) return NextResponse.json({ error: "text is required" }, { status: 400 });
 
     const processed = preprocessText(text);

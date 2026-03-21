@@ -3,16 +3,16 @@
 export interface Concept {
   term: string;
   definition: string;
-  mechanism: string; // HOW it works, nuts and bolts
-  linkedConcepts: string[]; // other concept terms in this doc
+  mechanism: string;
+  linkedConcepts: string[];
 }
 
 export interface Chunk {
   id: string;
   text: string;
-  summary: string; // what this section *establishes* (not concludes)
+  summary: string;
   concepts: Concept[];
-  adversarialQuestions: string[]; // 2-3 per chunk, Socratic
+  adversarialQuestions: string[];
 }
 
 export interface ProcessedDocument {
@@ -30,19 +30,7 @@ export interface RawDocument {
 
 // Per-chunk progress state
 export type ChunkStatus = "unread" | "heard" | "read";
-
-// Voice/TTS configuration (Sprint 2)
-export type VoiceProvider = "openai" | "gemini" | "browser";
-
-export interface VoiceConfig {
-  provider: VoiceProvider;
-  voice?: string;
-  model?: string;
-  apiKey?: string;
-}
-
-export const DEFAULT_VOICE_CONFIG: VoiceConfig = { provider: "browser" };
-export const VOICE_CONFIG_KEY = "steep_voice_config";
+// "heard" = listened in passive mode; "read" = completed active loop
 
 export interface ChunkProgress {
   chunkId: string;
@@ -60,14 +48,27 @@ export interface DocumentProgress {
   savedAt: number;
 }
 
+// Voice/TTS configuration (Sprint 2)
+export type VoiceProvider = "openai" | "gemini" | "browser";
+
+export interface VoiceConfig {
+  provider: VoiceProvider;
+  voice?: string;  // openai: alloy/echo/fable/onyx/nova/shimmer
+  model?: string;  // openai: tts-1 / tts-1-hd
+  apiKey?: string;
+}
+
+export const DEFAULT_VOICE_CONFIG: VoiceConfig = { provider: "browser" };
+export const VOICE_CONFIG_KEY = "steep_voice_config";
+
 // Active reading session state
 export type ReadingStep =
-  | "pre-field"    // step 1: prediction
-  | "summary"      // step 2: structural summary
-  | "reading"      // step 3: full text
-  | "post-field"   // step 4: recall
-  | "correction"   // step 5: AI feedback
-  | "adversarial"; // step 6: Socratic questioning
+  | "pre-field"
+  | "summary"
+  | "reading"
+  | "post-field"
+  | "correction"
+  | "adversarial";
 
 export interface RecallCheckRequest {
   chunkText: string;
@@ -78,4 +79,21 @@ export interface RecallCheckResponse {
   feedback: string;
   gaps: string[];
   strengths: string[];
+}
+
+// Synthesis layer (Sprint 2)
+export interface ReviewRecommendation {
+  timing: "1 day" | "1 week" | "1 month";
+  focus: string;
+}
+
+export interface SynthesisResponse {
+  feedback: string;
+  reviewRecommendations: ReviewRecommendation[];
+}
+
+// Passive recommendations (Sprint 2)
+export interface PassiveRecommendation {
+  chunkId: string;
+  reason: string;
 }
