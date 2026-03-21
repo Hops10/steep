@@ -4,46 +4,16 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { cn } from "@/lib/utils";
+import { stripMarkdown, splitBlocks, blockToPhrases, buildBlockRanges, type Phrase } from "@/lib/pacer";
 
 interface Props { text: string }
 type PacerState = "idle" | "running" | "paused" | "done";
-interface Phrase { text: string; wordCount: number; blockIndex: number }
 
 const WPM_KEY = "steep_pacer_wpm";
 const DEFAULT_WPM = 200;
 const MIN_WPM = 50;
 const MAX_WPM = 600;
 const WPM_STEP = 25;
-
-function stripMarkdown(md: string): string {
-  return md
-    .replace(/#{1,6}\s+/g, "").replace(/\*\*(.+?)\*\*/g, "$1")
-    .replace(/\*(.+?)\*/g, "$1").replace(/`(.+?)`/g, "$1")
-    .replace(/^\s*[-*+]\s/gm, "").replace(/^\s*\d+\.\s/gm, "")
-    .replace(/\[(.+?)\]\(.+?\)/g, "$1").replace(/^\s*>\s/gm, "")
-    .replace(/^-{3,}$/gm, "").trim();
-}
-
-function splitBlocks(markdown: string): string[] {
-  return markdown.split(/\n{2,}/).map(b => b.trim()).filter(Boolean);
-}
-
-function blockToPhrases(block: string, blockIndex: number): Phrase[] {
-  const words = stripMarkdown(block).split(/\s+/).filter(Boolean);
-  const phrases: Phrase[] = [];
-  let i = 0;
-  while (i < words.length) {
-    const ends = (idx: number) => /[.!?]["']?$/.test(words[idx]);
-    const group = [words[i]];
-    if (!ends(i) && i + 1 < words.length) {
-      group.push(words[i + 1]);
-      if (!ends(i + 1) && i + 2 < words.length) group.push(words[i + 2]);
-    }
-    phrases.push({ text: group.join(" "), wordCount: group.length, blockIndex });
-    i += group.length;
-  }
-  return phrases;
-}
 
 function phraseMs(wc: number, wpm: number) { return (wc / wpm) * 60000; }
 
@@ -56,11 +26,7 @@ function loadWpm(): number {
 export function ReadingPacer({ text }: Props) {
   const blocks = useMemo(() => splitBlocks(text), [text]);
   const phrases = useMemo(() => blocks.flatMap((b, i) => blockToPhrases(b, i)), [blocks]);
-  const blockRanges = useMemo(() => blocks.map((_, bi) => {
-    const start = phrases.findIndex(p => p.blockIndex === bi);
-    const count = phrases.filter(p => p.blockIndex === bi).length;
-    return { start, end: start + count - 1 };
-  }), [blocks, phrases]);
+  const blockRanges = useMemo(() => buildBlockRanges(blocks.length, phrases), [blocks.length, phrases]);
 
   const [wpm, setWpm] = useState(DEFAULT_WPM);
   const [state, setState] = useState<PacerState>("idle");

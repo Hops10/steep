@@ -7,6 +7,7 @@ import type { ProcessedDocument, ChunkStatus, RawDocument, VoiceConfig } from "@
 import type { AIConfig } from "@/lib/ai/types";
 import { AudioToolbar, type Speed } from "./AudioToolbar";
 import { PassiveChunkList } from "./PassiveChunkList";
+import { PassivePacer } from "./PassivePacer";
 import { usePassiveAudio } from "./usePassiveAudio";
 import { getPassiveFlags, togglePassiveFlag, getPassiveStatuses, savePassiveStatuses } from "@/lib/storage";
 import { generateId } from "@/lib/utils";
@@ -31,6 +32,7 @@ export function PassiveReader({
   const [flaggedIds, setFlaggedIds] = useState<Set<string>>(new Set());
   const [speed, setSpeed] = useState<Speed>(1);
   const [showEndPanel, setShowEndPanel] = useState(false);
+  const [showPacer, setShowPacer] = useState(true);
   const [recommendations, setRecommendations] = useState<{ chunkId: string; reason: string }[]>([]);
 
   // Ref to break circular dependency: handleChunkEnded uses audio.play; audio uses handleChunkEnded
@@ -125,7 +127,16 @@ export function PassiveReader({
         <main className="flex-1 overflow-y-auto bg-white dark:bg-slate-900 pb-24">
           {showEndPanel
             ? <EndPanel recommendations={recommendations} chunks={processedDocument.chunks} onStartActive={handleStartActive} onRestart={handleRestart} />
-            : <ChunkDisplay chunk={processedDocument.chunks[activeIndex]} />}
+            : <ChunkDisplay
+                chunk={processedDocument.chunks[activeIndex]}
+                isPlaying={audio.audioState === "playing"}
+                showPacer={showPacer}
+                onTogglePacer={() => setShowPacer(p => !p)}
+                getDuration={audio.getDuration}
+                getElapsed={audio.getElapsed}
+                getWordBoundaryIndex={audio.getWordBoundaryIndex}
+                getIsBrowserTTS={audio.getIsBrowserTTS}
+              />}
         </main>
       </div>
       <AudioToolbar state={audio.audioState} speed={speed} currentChunk={activeIndex} totalChunks={processedDocument.chunks.length} onPlay={handlePlay} onPause={audio.pause} onRestart={handleRestart} onSpeedChange={setSpeed} />
@@ -133,17 +144,52 @@ export function PassiveReader({
   );
 }
 
-function ChunkDisplay({ chunk }: { chunk?: { summary: string; text: string } }) {
+interface ChunkDisplayProps {
+  chunk?: { summary: string; text: string };
+  isPlaying: boolean;
+  showPacer: boolean;
+  onTogglePacer: () => void;
+  getDuration: () => number;
+  getElapsed: () => number;
+  getWordBoundaryIndex: () => number;
+  getIsBrowserTTS: () => boolean;
+}
+
+function ChunkDisplay({ chunk, isPlaying, showPacer, onTogglePacer, getDuration, getElapsed, getWordBoundaryIndex, getIsBrowserTTS }: ChunkDisplayProps) {
   if (!chunk) return null;
+  const showVisualPacer = isPlaying && showPacer;
   return (
     <div className="max-w-2xl mx-auto py-10 px-8 space-y-6">
       <div className="p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-lg text-sm text-slate-700 dark:text-slate-300">
         <span className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide block mb-1">Overview</span>
         {chunk.summary}
       </div>
-      <div className="prose prose-sm max-w-none leading-relaxed reading-text">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{chunk.text}</ReactMarkdown>
+      <div className="flex justify-end">
+        <button
+          onClick={onTogglePacer}
+          className={`text-xs px-3 py-1.5 rounded-full border transition-colors ${
+            showPacer
+              ? "border-amber-400 dark:border-amber-500 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20"
+              : "border-slate-200 dark:border-slate-600 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800"
+          }`}
+        >
+          ⏩ Follow along{showPacer ? ": on" : ": off"}
+        </button>
       </div>
+      {showVisualPacer ? (
+        <PassivePacer
+          text={chunk.text}
+          isPlaying={isPlaying}
+          getDuration={getDuration}
+          getElapsed={getElapsed}
+          getWordBoundaryIndex={getWordBoundaryIndex}
+          getIsBrowserTTS={getIsBrowserTTS}
+        />
+      ) : (
+        <div className="prose prose-sm max-w-none leading-relaxed reading-text">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{chunk.text}</ReactMarkdown>
+        </div>
+      )}
     </div>
   );
 }
